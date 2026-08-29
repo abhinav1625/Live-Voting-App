@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Voting App - Simple & Classic Real-Time Polling</title>
+  <meta name="description" content="Simple and classic real-time live voting app with multiple voting types, QR code joining, and live percentage distribution charts.">
+  
+  <!-- Classic Typography (Google Fonts Serif & Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       HEADER & NAVIGATION
+       ========================================================================== -->
+  <header class="app-header">
+    <div class="brand-wrapper" id="app-brand-btn">
+      <div class="brand-icon">🗳️</div>
+      <div class="brand-text">
+        <span class="brand-title">Live Voting App</span>
+        <span class="brand-subtitle">REAL-TIME POLLING & QUIZZES</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Active Room Pill (Visible when in session) -->
+      <div id="header-room-pill" class="room-badge" style="display: none;">
+        <span class="pulse-dot"></span>
+        <span>PIN: <strong id="header-room-code" class="current-room-code">------</strong></span>
+      </div>
+
+      <!-- Sound Toggle -->
+      <button id="btn-toggle-sound" class="icon-btn" title="Toggle Sound Feedback">🔔</button>
+
+      <!-- Theme Switcher -->
+      <button id="btn-toggle-theme" class="icon-btn" title="Toggle Dark/Light Mode">☀️</button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN VIEW CONTAINER
+       ========================================================================== -->
+  <main class="app-container">
+
+    <!-- ------------------------------------------------------------------------
+         VIEW 1: LANDING & HOME
+         ------------------------------------------------------------------------ -->
+    <section id="view-home" class="view-section active">
+      <div class="hero-section">
+        <div class="hero-tag">✨ Simple, Classic & Real-Time</div>
+        <h1 class="hero-title">Live Polling & Quizzes Made Simple</h1>
+        <p class="hero-desc">
+          Engage your audience instantly with live percentage distribution polls, single correct answer quizzes, 5-star ratings, word clouds, and binary votes. Join seamlessly using a 6-digit PIN or QR code.
+        </p>
+      </div>
+
+      <div class="home-cards-grid">
+        <!-- Join Card -->
+        <div class="home-card">
+          <div>
+            <div class="card-header-icon">📱</div>
+            <h2 class="card-title">Join a Live Poll</h2>
+            <p class="card-desc">Participate in an ongoing session. Enter the 6-character room PIN or scan the presenter's QR code.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+              <input type="text" id="input-join-pin" class="input-text pin-input" placeholder="R O O M   P I N" maxlength="6" />
+              <input type="text" id="input-join-name" class="input-text" placeholder="Your Name (Optional)" maxlength="30" />
+            </div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <button id="btn-home-join-submit" class="btn btn-primary btn-lg" style="width: 100%;">
+              Join with PIN →
+            </button>
+            <button id="btn-home-scan-qr" class="btn btn-secondary btn-lg" style="width: 100%;">
+              📷 Scan QR Code with Camera
+            </button>
+          </div>
+        </div>
+
+        <!-- Host Card -->
+        <div class="home-card">
+          <div>
+            <div class="card-header-icon">🎙️</div>
+            <h2 class="card-title">Host a Live Session</h2>
+            <p class="card-desc">Create your own live poll room with custom questions, timers, correct answer reveals, projector mode, and instant QR codes for your audience.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <button id="btn-home-create-poll" class="btn btn-primary btn-lg" style="width: 100%;">
+              + Create New Live Poll
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         VIEW 2: HOST STUDIO
+         ------------------------------------------------------------------------ -->
+    <section id="view-host" class="view-section">
+      <div class="host-layout">
+        <!-- Sidebar: Question Navigation -->
+        <aside class="host-sidebar">
+          <div class="sidebar-title-row">
+            <h3 style="font-size: 1.1rem;">Poll Questions</h3>
+            <div style="display: flex; gap: 0.35rem;">
+              <button id="btn-host-add-question" class="btn btn-primary btn-sm" title="Add Single Question">+ Add</button>
+              <button id="btn-host-bulk-sets" class="btn btn-secondary btn-sm" title="Import Complete Question Set">📦 Sets</button>
+            </div>
+          </div>
+          <div id="host-question-list" class="question-list">
+            <!-- Questions rendered dynamically -->
+          </div>
+          <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <button id="btn-host-export-csv" class="btn btn-secondary btn-sm" style="width: 100%;">📥 Export Results (CSV)</button>
+          </div>
+        </aside>
+
+        <!-- Main Host Stage -->
+        <main class="host-stage">
+          <div class="stage-top-bar">
+            <div class="stage-status-group">
+              <span id="host-poll-status" class="status-pill open">OPEN</span>
+              <span id="host-total-responses" class="response-count-pill">0 Responses</span>
+              <span id="host-timer-badge" class="status-pill revealed" style="display: none;">⏱ 30s</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button id="btn-host-show-qr" class="btn btn-outline-primary btn-sm">📱 QR Code & Join Link</button>
+              <button id="btn-host-projector" class="btn btn-secondary btn-sm">🖥️ Projector Mode</button>
+            </div>
+          </div>
+
+          <!-- Active Question Header -->
+          <div class="active-q-header">
+            <div id="host-active-q-type" class="active-q-type">QUESTION 1 • POLL</div>
+            <h1 id="host-active-q-title" class="active-q-title">Loading Question...</h1>
+            <p id="host-active-q-subtitle" class="active-q-subtitle"></p>
+          </div>
+
+          <!-- Stage Controls Toolbar -->
+          <div class="stage-controls-toolbar">
+            <button id="btn-host-prev-q" class="btn btn-secondary btn-sm" title="Previous Question">← Previous</button>
+            <button id="btn-host-next-q" class="btn btn-secondary btn-sm" title="Next Question">Next →</button>
+            <button id="btn-host-lock" class="btn btn-secondary btn-sm">🔒 Lock Voting</button>
+            <button id="btn-host-reveal" class="btn btn-accent btn-sm" style="display: none;">🎯 Reveal Correct Answer</button>
+            
+            <!-- Customizable Timer Group (10s to 1 min) -->
+            <div class="timer-control-group">
+              <label for="select-timer-duration" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">⏱ Duration:</label>
+              <select id="select-timer-duration" class="input-text timer-select" style="padding: 0.3rem 0.5rem; width: auto; font-size: 0.85rem;">
+                <option value="10">10s</option>
+                <option value="15">15s</option>
+                <option value="20">20s</option>
+                <option value="30" selected>30s</option>
+                <option value="45">45s</option>
+                <option value="60">60s (1 min)</option>
+              </select>
+              <button id="btn-host-timer" class="btn btn-primary btn-sm">▶ Start Timer</button>
+            </div>
+
+            <button id="btn-host-clear" class="btn btn-secondary btn-sm" title="Reset Votes for this question">🔄 Reset Votes</button>
+            <button id="btn-host-delete-q" class="btn btn-danger btn-sm" title="Delete current question">🗑️ Delete</button>
+          </div>
+
+          <!-- Dynamic Visualizer Canvas -->
+          <div id="host-visualizer-stage">
+            <!-- Rendered dynamically according to question type -->
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         VIEW 3: PROJECTOR / PRESENTATION VIEW
+         ------------------------------------------------------------------------ -->
+    <section id="view-projector" class="view-section">
+      <div class="projector-view-container">
+        <!-- Top Bar with Navigation Controls -->
+        <div class="projector-header">
+          <div class="projector-join-info">
+            <div id="projector-mini-qr" class="projector-qr-mini"></div>
+            <div class="projector-join-text">
+              <h3>Join at <span id="projector-join-url" style="color: var(--brand-primary);">livevote.app</span></h3>
+              <div>Room PIN: <span id="projector-room-pin" class="pin-highlight">------</span></div>
+            </div>
+          </div>
+
+          <!-- Projector Live Navigation & Controls Toolbar -->
+          <div class="projector-nav-toolbar">
+            <button id="btn-projector-prev-q" class="btn btn-secondary btn-sm" title="Previous Question (Left Arrow)">← Previous</button>
+            <div id="projector-q-counter" class="projector-counter-badge">Question 1 of 1</div>
+            <button id="btn-projector-next-q" class="btn btn-primary btn-sm" title="Next Question (Right Arrow)">Next →</button>
+            <button id="btn-projector-reveal" class="btn btn-accent btn-sm" style="display: none;">🎯 Reveal Answer</button>
+
+            <!-- Projector Timer Control Group -->
+            <div class="timer-control-group" style="margin-left: 0.35rem;">
+              <select id="select-projector-timer-duration" class="input-text timer-select" style="padding: 0.25rem 0.4rem; font-size: 0.8rem; width: auto;">
+                <option value="10">10s</option>
+                <option value="15">15s</option>
+                <option value="20">20s</option>
+                <option value="30" selected>30s</option>
+                <option value="45">45s</option>
+                <option value="60">60s (1m)</option>
+              </select>
+              <button id="btn-projector-timer" class="btn btn-primary btn-sm" style="padding: 0.35rem 0.65rem;">▶ Timer</button>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div id="projector-response-count" class="room-badge" style="font-size: 1.05rem; padding: 0.45rem 0.9rem;">
+              0 Votes
+            </div>
+            <button id="btn-projector-fullscreen" class="btn btn-secondary btn-sm" title="Toggle Fullscreen">⛶ Fullscreen</button>
+          </div>
+        </div>
+
+        <!-- Fullscreen Dramatic Countdown Timer (PROJECTOR MODE ONLY) -->
+        <div id="projector-fullscreen-timer-overlay" class="projector-fullscreen-timer" style="display: none;">
+          <div class="timer-dramatic-container">
+            <div class="timer-active-badge">
+              <span class="pulse-dot"></span> LIVE AUDIENCE VOTING IN PROGRESS
+            </div>
+            <h1 id="projector-timer-q-title" class="timer-q-headline">Question Title</h1>
+            
+            <div class="timer-countdown-display">
+              <svg class="timer-countdown-svg" viewBox="0 0 240 240">
+                <circle class="timer-ring-bg" cx="120" cy="120" r="100"></circle>
+                <circle id="projector-timer-ring-stroke" class="timer-ring-stroke" cx="120" cy="120" r="100"></circle>
+              </svg>
+              <div class="timer-countdown-center">
+                <span id="projector-timer-big-num" class="timer-hero-number">30</span>
+                <span class="timer-hero-label">SECONDS LEFT</span>
+              </div>
+            </div>
+
+            <p class="timer-sub-hint">Submit your answer now! Time is running out.</p>
+            <button id="btn-projector-cancel-timer" class="btn btn-secondary btn-sm" style="margin-top: 1.25rem; opacity: 0.8;">
+              ⏹ Stop Timer Early
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Presentation Grid -->
+        <div id="projector-main-stage-grid" class="projector-stage-grid">
+          <div class="projector-question-card">
+            <h1 id="projector-q-title" class="projector-q-title">Question Title</h1>
+            <div id="projector-visualizer-stage">
+              <!-- Live percentage bars rendered here -->
+            </div>
+          </div>
+
+          <!-- Right QR Code Box -->
+          <div class="projector-qr-card-large">
+            <div class="qr-badge-pill">📱 SCAN TO VOTE</div>
+            <div id="projector-qr-container" class="projector-qr-frame">
+              <!-- SVG QR Code -->
+            </div>
+            <div class="qr-instructions-list">
+              <div>1. Open camera on your phone</div>
+              <div>2. Point at the QR Code above</div>
+              <div>3. Tap the link to vote instantly!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         VIEW 4: PARTICIPANT / VOTER SCREEN
+         ------------------------------------------------------------------------ -->
+    <section id="view-voter" class="view-section">
+      <div class="voter-container">
+        <div class="voter-status-banner">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="pulse-dot"></span>
+            <span>Room: <strong id="voter-room-pin" class="current-room-code">------</strong></span>
+          </div>
+
+          <!-- Small Live Countdown Timer Pill on Voter Page -->
+          <div id="voter-timer-pill" class="voter-timer-pill" style="display: none;">
+            <span class="voter-timer-icon">⏱</span>
+            <span id="voter-timer-num">30</span><span class="voter-timer-unit">s left</span>
+          </div>
+
+          <span id="voter-q-index" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Question 1</span>
+        </div>
+
+        <div id="voter-content-card" class="voter-card">
+          <!-- Question and interactive option choices rendered here -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       MODALS & OVERLAYS
+       ========================================================================== -->
+  
+  <!-- QR Code Modal -->
+  <div id="qr-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size: 1.3rem;">Scan to Join Live Poll</h3>
+        <button class="icon-btn btn-close-modal">✕</button>
+      </div>
+      <div class="modal-body qr-modal-content">
+        <div id="qr-modal-svg" class="qr-code-frame-large"></div>
+        <div>
+          <div style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Room PIN Code</div>
+          <div id="qr-modal-pin" class="pin-input" style="font-size: 2.2rem; color: var(--brand-primary); margin: 0.25rem 0;">------</div>
+        </div>
+        <div style="width: 100%; display: flex; gap: 0.5rem;">
+          <input type="text" id="qr-modal-url" class="input-text" readonly style="font-size: 0.85rem;" />
+          <button id="btn-copy-qr-link" class="btn btn-secondary btn-sm" style="white-space: nowrap;">📋 Copy Link</button>
+        </div>
+        <div style="width: 100%; display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+          <button id="btn-download-qr-png" class="btn btn-outline-primary btn-sm" style="flex: 1;">
+            ⬇️ Download QR Image (PNG)
+          </button>
+          <button id="btn-open-test-tab" class="btn btn-secondary btn-sm" style="flex: 1;">
+            🚀 Open Voter Tab
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-close-modal">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-Browser Camera QR Scanner Modal -->
+  <div id="scanner-modal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.3rem;">📷 Scan Presenter's QR Code</h3>
+        <button id="btn-close-scanner" class="icon-btn">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+        <div class="camera-feed-box">
+          <video id="qr-scanner-video" playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+          <div class="camera-target-crosshair"></div>
+        </div>
+        <p id="scanner-status-text" style="color: var(--text-secondary); font-size: 0.9rem; text-align: center;">
+          Point camera at the Host's screen QR code to join automatically.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('btn-close-scanner').click()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add New Question Modal -->
+  <div id="add-question-modal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.4rem;">✍️</span>
+          <div>
+            <h3 style="font-size: 1.25rem;">Create Questions</h3>
+            <span id="modal-q-counter-badge" style="font-size: 0.8rem; color: var(--brand-primary); font-weight: 600;">Question #1</span>
+          </div>
+        </div>
+        <button class="icon-btn btn-close-modal" title="Close">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.1rem;">
+        <div>
+          <label style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem;">Question Type</label>
+          <select id="select-new-q-type" class="input-text">
+            <option value="quiz">Single Correct Answer Quiz</option>
+            <option value="poll">Percentage Distribution Poll (Multi-choice)</option>
+            <option value="rating">Rating Scale (1 - 5 Stars)</option>
+            <option value="wordcloud">Word Cloud / Open Text</option>
+            <option value="binary">Binary (Yes / No Sentiment)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem;">Question Title</label>
+          <input type="text" id="input-new-q-title" class="input-text" placeholder="e.g. What is the capital of France?" />
+        </div>
+
+        <!-- 4 Default Options List (for Quiz & Poll) -->
+        <div id="wrapper-new-q-options">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+            <label style="font-weight: 600; font-size: 0.9rem;">
+              Question Options <span id="label-correct-hint" style="color: var(--accent-correct); font-weight: 600; font-size: 0.8rem;">(Select radio button for Correct Answer)</span>
+            </label>
+            <button type="button" id="btn-add-option-row" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 0.25rem 0.6rem;">+ Add Option</button>
+          </div>
+          
+          <div id="options-builder-container" style="display: flex; flex-direction: column; gap: 0.6rem;">
+            <!-- Dynamically initialized with 4 default options (Option A, B, C, D) -->
+          </div>
+        </div>
+
+        <div id="wrapper-new-q-explanation">
+          <label style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem;">Explanation / Context (Optional)</label>
+          <input type="text" id="input-new-q-explanation" class="input-text" placeholder="Explain why this answer is correct..." />
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="btn btn-secondary btn-close-modal">Close</button>
+        <div style="display: flex; gap: 0.6rem;">
+          <button type="button" id="btn-modal-add-next-q" class="btn btn-secondary" style="border: 1px solid var(--brand-primary); color: var(--brand-primary); font-weight: 600;">
+            + Add Next Question
+          </button>
+          <button type="button" id="btn-modal-add-q-submit" class="btn btn-primary">
+            ✓ Submit & Finish
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete Question Sets & Bulk Import Modal -->
+  <div id="bulk-questions-modal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h3 style="font-size: 1.3rem;">📦 Question Sets & Bulk Import</h3>
+        <button class="icon-btn btn-close-modal">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        
+        <!-- Tab Navigation -->
+        <div class="bulk-modal-tabs">
+          <button type="button" class="bulk-tab-btn active" data-tab="presets">Ready-to-Use Sets</button>
+          <button type="button" class="bulk-tab-btn" data-tab="paste">Paste Full Text Set</button>
+          <button type="button" class="bulk-tab-btn" data-tab="json">JSON File Import / Export</button>
+        </div>
+
+        <!-- Tab 1: Preset Complete Question Sets -->
+        <div id="bulk-tab-content-presets" class="bulk-tab-panel active">
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+            Choose a curated complete question set to load instantly into your live voting room:
+          </p>
+          <div class="preset-sets-grid">
+            
+            <div class="preset-card">
+              <div class="preset-card-header">
+                <span class="preset-card-icon">🧠</span>
+                <div>
+                  <h4 style="font-size: 1rem;">General Knowledge Trivia</h4>
+                  <span style="font-size: 0.75rem; color: var(--brand-primary); font-weight: 600;">5 Quiz Questions</span>
+                </div>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0.5rem 0 0.8rem;">
+                World capitals, geography, space, and science trivia with correct answers.
+              </p>
+              <button type="button" class="btn btn-primary btn-sm btn-load-preset" data-preset="trivia" style="width: 100%;">
+                ⚡ Load Complete Trivia Set
+              </button>
+            </div>
+
+            <div class="preset-card">
+              <div class="preset-card-header">
+                <span class="preset-card-icon">💻</span>
+                <div>
+                  <h4 style="font-size: 1rem;">Tech, Coding & AI Quiz</h4>
+                  <span style="font-size: 0.75rem; color: var(--brand-primary); font-weight: 600;">5 Quiz Questions</span>
+                </div>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0.5rem 0 0.8rem;">
+                Web dev, Python, JavaScript, CSS, and AI trivia with explanations.
+              </p>
+              <button type="button" class="btn btn-primary btn-sm btn-load-preset" data-preset="tech" style="width: 100%;">
+                ⚡ Load Complete Tech Set
+              </button>
+            </div>
+
+            <div class="preset-card">
+              <div class="preset-card-header">
+                <span class="preset-card-icon">🤝</span>
+                <div>
+                  <h4 style="font-size: 1rem;">Team All-Hands & Icebreaker</h4>
+                  <span style="font-size: 0.75rem; color: var(--accent-correct); font-weight: 600;">4 Mixed Polls & Ratings</span>
+                </div>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0.5rem 0 0.8rem;">
+                Word cloud check-in, meeting sentiment ratings, and preference polls.
+              </p>
+              <button type="button" class="btn btn-primary btn-sm btn-load-preset" data-preset="team" style="width: 100%;">
+                ⚡ Load Complete Team Set
+              </button>
+            </div>
+
+            <div class="preset-card">
+              <div class="preset-card-header">
+                <span class="preset-card-icon">📊</span>
+                <div>
+                  <h4 style="font-size: 1rem;">Product Strategy & Retro</h4>
+                  <span style="font-size: 0.75rem; color: var(--accent-gold); font-weight: 600;">4 Voting & Rating Polls</span>
+                </div>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0.5rem 0 0.8rem;">
+                Sprint velocity feedback, feature priority ranking, and launch readiness.
+              </p>
+              <button type="button" class="btn btn-primary btn-sm btn-load-preset" data-preset="product" style="width: 100%;">
+                ⚡ Load Complete Strategy Set
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 2: Paste Full Question Set (Text) -->
+        <div id="bulk-tab-content-paste" class="bulk-tab-panel" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <label style="font-weight: 600; font-size: 0.9rem;">Paste Multiple Questions</label>
+            <span id="bulk-detected-count" style="font-size: 0.8rem; font-weight: 700; color: var(--brand-primary);">0 questions detected</span>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 0.6rem;">
+            Tip: Mark the correct answer with an asterisk <code>*</code> (e.g. <code>B) Paris *</code>) or use tags like <code>[rating]</code>, <code>[wordcloud]</code>, <code>[binary]</code>.
+          </p>
+          <textarea id="input-bulk-paste-text" class="input-text" rows="10" placeholder="1. What is the capital of France?&#10;A) London&#10;B) Paris *&#10;C) Rome&#10;D) Berlin&#10;&#10;2. Which planet is the Red Planet?&#10;A) Venus&#10;B) Mars *&#10;C) Jupiter&#10;D) Saturn&#10;&#10;3. How do you rate this project?&#10;[rating]&#10;&#10;4. What is your favorite tech stack?&#10;[wordcloud]"></textarea>
+          
+          <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.75rem;">
+            <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+              <input type="radio" name="bulk_import_mode" value="replace" checked style="accent-color: var(--brand-primary);" />
+              <span>Replace current question list</span>
+            </label>
+            <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+              <input type="radio" name="bulk_import_mode" value="append" style="accent-color: var(--brand-primary);" />
+              <span>Append to existing questions</span>
+            </label>
+          </div>
+
+          <button type="button" id="btn-submit-bulk-paste" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">
+            📥 Import Questions from Text
+          </button>
+        </div>
+
+        <!-- Tab 3: JSON Import / Export -->
+        <div id="bulk-tab-content-json" class="bulk-tab-panel" style="display: none;">
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+            Export the current question list to a JSON file for backup or import a saved JSON set:
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="border: 2px dashed var(--border-medium); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; background-color: var(--bg-surface-muted);">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
+              <h4 style="margin-bottom: 0.3rem;">Upload Question Set JSON File</h4>
+              <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 1rem;">Select a valid <code>.json</code> file generated by Live Voting App</p>
+              <input type="file" id="input-json-file-upload" accept=".json" style="display: none;" />
+              <button type="button" id="btn-trigger-json-upload" class="btn btn-secondary btn-sm">
+                Choose JSON File
+              </button>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+              <button type="button" id="btn-export-json-set" class="btn btn-outline-primary" style="flex: 1;">
+                💾 Export Current Questions (.JSON)
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-close-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ==========================================================================
+       SCRIPTS (Loaded in sequence)
+       ========================================================================== -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="js/qr-generator.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/confetti.js"></script>
+  <script src="js/poll-engine.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
